@@ -1,0 +1,32 @@
+{
+  "game": {
+    "bet": {
+      "min": 1,
+      "max": 0,
+      "increase": {
+        "allow": true,
+        "count": 1
+      }
+    },
+    "place": {
+      "background": "./assets/background.jpg",
+      "cards_style": {
+        "foreground": "./assets/cards/",
+        "background": "./assets/cards_back.jpg"
+      },
+      "hide_dealer_cards": false,
+      "hide_first_dealer_card": true
+    }
+  },
+  "player": {
+    "init": {
+      "balance": 5000
+    }
+  },
+  "dealer": {
+    "name": "bot1",
+    "behavior": {
+      "drop_from": 17
+    }
+  }
+}
