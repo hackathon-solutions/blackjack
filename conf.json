@@ -11,8 +11,8 @@
     "place": {
       "background": "./assets/background.jpg",
       "cards_style": {
-        "foreground": "./assets/cards/",
-        "background": "./assets/cards_back.jpg"
+        "background": "./assets/cards/card_back.png",
+        "foreground": "./assets/cards/foreground/"
       },
       "hide_dealer_cards": false,
       "hide_first_dealer_card": true
