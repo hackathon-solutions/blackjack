@@ -19,7 +19,7 @@ class PlaySpace(QtWidgets.QWidget):
         QtGui.QPainter(self).drawPixmap(0, 0, pixmap)
 
 
-class Card(QtWidgets.QFrame):
+class CardFrame(QtWidgets.QFrame):
     def __init__(self, card_id: str, w: int = 64, h: int = 86):
         super().__init__()
         self._cover = helpers.CardImageLoader(card_id).get_image()
