@@ -13,7 +13,7 @@ HIDE_DEALER_CARDS = 'game.place.hide_dealer_cards'
 HIDE_FIRST_DEALER_CARD = 'game.place.hide_first_dealer_card'
 PLAYER_INIT_BALANCE = 'player.init.balance'
 DEALER_NAME = 'dealer.name'
-DEALER_DROP_FROM = 'dealer.behaviour.drop_from'
+DEALER_DROP_FROM = 'dealer.behavior.drop_from'
 
 
 with open('./conf.json', 'r', encoding='utf-8') as f:
