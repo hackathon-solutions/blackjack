@@ -1,6 +1,6 @@
 from PySide2 import QtWidgets, QtGui, QtCore
 
-from config import config, PLACE_BACKGROUND
+from config import config, APP_TITLE, ICON, PLACE_BACKGROUND
 from widgets import helpers
 
 
@@ -9,7 +9,8 @@ class PlaySpace(QtWidgets.QWidget):
         super().__init__()
         self._w = w
         self._h = h
-        self.setWindowTitle('Блэкджек')
+        self.setWindowTitle(config(APP_TITLE))
+        self.setWindowIcon(QtGui.QIcon(config(ICON)))
         self.setMinimumSize(self._w, self._h)
         self.setMaximumSize(self._w, self._h)
 

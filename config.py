@@ -1,5 +1,7 @@
 from json import loads
 
+APP_TITLE = 'app.title'
+ICON = 'app.icon'
 MIN_BET = 'game.bet.min'
 MAX_BET = 'game.bet.max'
 INCREASE_ALLOW = 'game.bet.increase.allow'

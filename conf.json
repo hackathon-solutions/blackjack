@@ -1,4 +1,8 @@
 {
+  "app": {
+    "title": "Blackjack",
+    "icon": "./assets/cards/card_back.png"
+  },
   "game": {
     "bet": {
       "min": 1,

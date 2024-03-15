@@ -12,9 +12,14 @@ class CardIdBuilder:
         self._rank = rank
         self._mime = mime
 
+    @staticmethod
+    def cover():
+        return CardIdBuilder(CardIdBuilder.COVER, CardIdBuilder.COVER)
+
     def get(self):
         return f'{self._rank}_{self._suit}{("." + self._mime) if self._mime else ""}'
 
+    COVER = 'card_cover'
     SUIT_CLUB = 'club'
     SUIT_DIAMOND = 'diamond'
     SUIT_HEART = 'heart'
@@ -39,6 +44,9 @@ class CardImageLoader:
         self._card_id = card_id
 
     def get_path(self) -> pathlib.Path:
+        if self._card_id.count(CardIdBuilder.COVER) == 2:
+            return config.config(config.CARDS_BACKGROUND)
+
         for file in os.listdir(config.config(config.CARDS_FOREGROUND)):
             if file.startswith(self._card_id):
                 return pathlib.Path(f'{config.config(config.CARDS_FOREGROUND)}{file}').absolute()
