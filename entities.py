@@ -1,14 +1,20 @@
 from random import shuffle
-from config import config, PLAYER_INIT_BALANCE, DEALER_DROP_FROM, MIN_BET, MAX_BET, INCREASE_ALLOW, INCREASE_COUNT
+from config import config, PLAYER_INIT_BALANCE, DEALER_DROP_FROM, MIN_BET, MAX_BET, INCREASE_ALLOW, INCREASE_COUNT, \
+    DEALER_NAME
 
 
 class Player:
     def __init__(self, name: str, balance: int = config(PLAYER_INIT_BALANCE)):
         self._name = name
         self._balance = balance
+        self._is_me = False
 
     def update_balance(self, more: int):
         self._balance += more
+
+    def me(self):
+        self._is_me = True
+        return self
 
     @property
     def name(self):
@@ -20,7 +26,7 @@ class Player:
 
 
 class Dealer(Player):
-    def __init__(self, name: str, balance: int, drop_from: int = config(DEALER_DROP_FROM)):
+    def __init__(self, balance: int, name: str = config(DEALER_NAME), drop_from: int = config(DEALER_DROP_FROM)):
         super().__init__(name, balance)
         self._drop_from = drop_from
 
@@ -105,6 +111,14 @@ class CardDeck:
         self._count -= 1
         return self._cards.pop(0)
 
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def size(self):
+        return self._deck_size
+
     def __str__(self):
         return list(map(lambda card: card.__str__(), self._cards)).__str__()
 
@@ -115,22 +129,44 @@ class PlayerRound:
         self._bet = 0
         self._count_increases = 0
         self._cards: list[Card] = []
+        self._folded = False
+        self._double = False
+        self._quantity_takes_card = -1
 
     def place_bet(self, bet: int):
         if bet > self.player.balance:
             raise RuntimeError('Incorrect bet')
         self._player.update_balance(-bet)
+        self._bet += bet
         self.increase()
 
     def increase(self):
         self._count_increases += 1
 
     def put_card(self, card: Card):
+        if self._quantity_takes_card == 0:
+            raise RuntimeError('Cannot card taken')
+        if self._quantity_takes_card > 0:
+            self._quantity_takes_card -= 1
         self._cards.append(card)
+
+    def double(self):
+        self._double = True
+        self._quantity_takes_card = 1
+
+    def fold(self):
+        part_of_bet = self._bet // 2
+        self._bet -= part_of_bet
+        self.player.update_balance(part_of_bet)
+        self._folded = True
 
     @property
     def player(self):
         return self._player
+
+    @property
+    def bet(self):
+        return self._bet
 
     @property
     def count_increases(self):
@@ -139,6 +175,14 @@ class PlayerRound:
     @property
     def cards(self):
         return [*self._cards]
+
+    @property
+    def folded(self):
+        return self._folded
+
+    @property
+    def is_double(self):
+        return self._double
 
 
 class Round:
@@ -155,14 +199,31 @@ class Round:
         player.put_card(self.card_deck.take())
 
     def place_bet(self, player: PlayerRound, bet: int):
-        if self._min_bet < bet < self._max_bet or player.count_increases > self._max_increase_count:
+        if player.count_increases > self._max_increase_count:
+            raise RuntimeError('Cannot place')
+        if self._min_bet < bet < self._max_bet:
             raise RuntimeError('Incorrect bet')
         player.place_bet(bet)
         self._bank += bet
 
+    def double_bet(self, player: PlayerRound):
+        if player.is_double:
+            raise RuntimeError('Cannot double bet')
+        self.place_bet(player, player.bet)
+        player.double()
+
+    def fold(self, player: PlayerRound):
+        if player.folded:
+            raise RuntimeError('Cannot fold')
+        self._bank -= player.bet // 2
+        player.fold()
+
     @property
     def active_players(self):
         return [*self._active_players]
+
+    def add_player(self, player: Player):
+        self._active_players.append(PlayerRound(player))
 
     def kick_player(self, player: PlayerRound):
         self._active_players.remove(player)
@@ -171,9 +232,14 @@ class Round:
     def card_deck(self):
         return self._card_deck
 
+    @property
+    def min_bet(self):
+        return self._min_bet
+
 
 class Game:
-    def __init__(self):
+    def __init__(self, dealer: Dealer):
+        self._dealer = dealer
         self._players: list[Player] = []
         self._cur_round = None
         self.count_rounds = 0
@@ -183,6 +249,19 @@ class Game:
 
     def remove_player(self, player: Player):
         self._players.remove(player)
+
+    def new_round(self):
+        self._cur_round = Round()
+        for player in self.players:
+            if player.balance >= self._cur_round.min_bet:
+                self._cur_round.add_player(player)
+        if len(self._cur_round.active_players) < 2:
+            self._cur_round = None
+            raise RuntimeError('Fail round (amount players less than 2).')
+
+    @property
+    def dealer(self):
+        return self._dealer
 
     @property
     def players(self):
