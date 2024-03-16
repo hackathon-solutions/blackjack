@@ -76,6 +76,36 @@ class Card:
     RANK_ACE = 'A'
 
 
+class CardCounting:
+    def __init__(self, cards: list[Card]):
+        self._cards = cards
+
+    def _basis_rank_count(self) -> int:
+        count = 0
+        for card in self._cards:
+            if card.rank.isdigit():
+                count += int(card.rank)
+        return count
+
+    @property
+    def blackjack_count(self) -> int:
+        count = self._basis_rank_count()
+        for card in self._cards:
+            if not card.rank.isdigit():
+                if card.rank in [Card.RANK_JACK, Card.RANK_QUEEN, Card.RANK_KING]:
+                    count += 10
+                elif card.rank == Card.RANK_ACE:
+                    if count + 11 > 21:
+                        count += 1
+                    else:
+                        count += 11
+        return count
+
+    @property
+    def simple_count(self) -> int:
+        raise RuntimeError()
+
+
 class CardSequenceGenerator:
     def __init__(self):
         self._ranks = [Card.RANK_2, Card.RANK_3, Card.RANK_4, Card.RANK_5, Card.RANK_6, Card.RANK_7, Card.RANK_8,
@@ -199,6 +229,7 @@ class Round:
         self._max_bet = config(MAX_BET)
         self._increase_allow = config(INCREASE_ALLOW)
         self._max_increase_count = config(INCREASE_COUNT)
+        self._finished = False
 
     def take_card(self, player: PlayerRound):
         player.put_card(self.card_deck.take())
@@ -229,6 +260,26 @@ class Round:
     def kick_player(self, player: PlayerRound):
         self._active_players.remove(player)
 
+    def finish(self):
+        winners = []
+        scores = self.active_players
+        scores = filter(lambda pl: CardCounting(pl.cards).blackjack_count <= 21, scores)
+        scores = sorted(scores, key=lambda pl: CardCounting(pl.cards).blackjack_count, reverse=True)
+        mx = CardCounting(scores[0].cards).blackjack_count
+        for player in scores:
+            if mx != CardCounting(player.cards).blackjack_count:
+                break
+            mx = CardCounting(scores[0].cards).blackjack_count
+            winners.append(player.player)
+        self.distribute_bank(winners)
+        self._finished = True
+
+    def distribute_bank(self, distributors: list[Player]):
+        min_part_bank = self._bank // len(distributors)
+        for player in distributors:
+            player.update_balance(min_part_bank)
+        self._bank = 0
+
     @property
     def active_players(self) -> list[PlayerRound]:
         return [*self._active_players]
@@ -240,6 +291,10 @@ class Round:
     @property
     def min_bet(self) -> int:
         return self._min_bet
+
+    @property
+    def finished(self):
+        return self._finished
 
 
 class Game:
