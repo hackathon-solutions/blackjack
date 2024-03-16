@@ -18,15 +18,15 @@ class Player:
         return self
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def balance(self):
+    def balance(self) -> int:
         return self._balance
 
     @property
-    def is_me(self):
+    def is_me(self) -> bool:
         return self._is_me
 
 
@@ -36,7 +36,7 @@ class Dealer(Player):
         self._drop_from = drop_from
 
     @property
-    def drop_from(self):
+    def drop_from(self) -> int:
         return self._drop_from
 
 
@@ -46,14 +46,14 @@ class Card:
         self._rank = rank
 
     @property
-    def suit(self):
+    def suit(self) -> str:
         return self._suit
 
     @property
-    def rank(self):
+    def rank(self) -> str:
         return self._rank
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.rank} of {self.suit}'
 
     COVER = 'card_cover'
@@ -117,14 +117,14 @@ class CardDeck:
         return self._cards.pop(0)
 
     @property
-    def count(self):
+    def count(self) -> int:
         return self._count
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self._deck_size
 
-    def __str__(self):
+    def __str__(self) -> str:
         return list(map(lambda card: card.__str__(), self._cards)).__str__()
 
 
@@ -166,27 +166,27 @@ class PlayerRound:
         self._folded = True
 
     @property
-    def player(self):
+    def player(self) -> Player:
         return self._player
 
     @property
-    def bet(self):
+    def bet(self) -> int:
         return self._bet
 
     @property
-    def count_increases(self):
+    def count_increases(self) -> int:
         return self._count_increases
 
     @property
-    def cards(self):
+    def cards(self) -> list[Card]:
         return [*self._cards]
 
     @property
-    def folded(self):
+    def folded(self) -> bool:
         return self._folded
 
     @property
-    def is_double(self):
+    def is_double(self) -> bool:
         return self._double
 
 
@@ -223,10 +223,6 @@ class Round:
         self._bank -= player.bet // 2
         player.fold()
 
-    @property
-    def active_players(self):
-        return [*self._active_players]
-
     def add_player(self, player: Player):
         self._active_players.append(PlayerRound(player))
 
@@ -234,11 +230,15 @@ class Round:
         self._active_players.remove(player)
 
     @property
-    def card_deck(self):
+    def active_players(self) -> list[PlayerRound]:
+        return [*self._active_players]
+
+    @property
+    def card_deck(self) -> CardDeck:
         return self._card_deck
 
     @property
-    def min_bet(self):
+    def min_bet(self) -> int:
         return self._min_bet
 
 
@@ -267,17 +267,17 @@ class Game:
         return self._cur_round
 
     @property
-    def dealer(self):
+    def dealer(self) -> Dealer:
         return self._dealer
 
     @property
-    def players(self):
+    def players(self) -> list[Player]:
         return [*self._players]
 
     @property
-    def cur_round(self):
+    def cur_round(self) -> Round:
         return self._cur_round
 
     @property
-    def quantity_rounds(self):
+    def quantity_rounds(self) -> int:
         return self._quantity_rounds
