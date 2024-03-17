@@ -1,4 +1,5 @@
 from random import shuffle
+
 from config import config, PLAYER_INIT_BALANCE, DEALER_DROP_FROM, MIN_BET, MAX_BET, INCREASE_ALLOW, INCREASE_COUNT, \
     DEALER_NAME
 from exceptions import *
@@ -231,11 +232,14 @@ class Round:
         self._max_increase_count = config(INCREASE_COUNT)
         self._finished = False
 
-    def take_card(self, player: PlayerRound):
-        player.put_card(self.card_deck.take())
+    def take_card(self, player: PlayerRound) -> Card:
+        if self.finished:
+            raise CannotCardTakenException()
+        player.put_card(card := self.card_deck.take())
+        return card
 
     def place_bet(self, player: PlayerRound, bet: int):
-        if player.count_increases > self._max_increase_count:
+        if player.count_increases > self._max_increase_count or self.finished:
             raise CannotPlaceBetException()
         if self._min_bet < bet < self._max_bet:
             raise IncorrectBetException()
@@ -243,13 +247,13 @@ class Round:
         self._bank += bet
 
     def double_bet(self, player: PlayerRound):
-        if player.is_double:
+        if player.is_double or self.finished:
             raise CannotDoubleBetException()
         self.place_bet(player, player.bet)
         player.double()
 
     def fold(self, player: PlayerRound):
-        if player.folded:
+        if player.folded or self.finished:
             raise CannotFoldException()
         self._bank -= player.bet // 2
         player.fold()
@@ -260,19 +264,23 @@ class Round:
     def kick_player(self, player: PlayerRound):
         self._active_players.remove(player)
 
-    def finish(self):
+    def finish(self) -> list[Player]:
+        if self.finished:
+            raise GameOperationException()
         winners = []
         scores = self.active_players
         scores = filter(lambda pl: CardCounting(pl.cards).blackjack_count <= 21, scores)
         scores = sorted(scores, key=lambda pl: CardCounting(pl.cards).blackjack_count, reverse=True)
-        mx = CardCounting(scores[0].cards).blackjack_count
-        for player in scores:
-            if mx != CardCounting(player.cards).blackjack_count:
-                break
+        if scores:
             mx = CardCounting(scores[0].cards).blackjack_count
-            winners.append(player.player)
-        self.distribute_bank(winners)
+            for player in scores:
+                if mx != CardCounting(player.cards).blackjack_count:
+                    break
+                mx = CardCounting(scores[0].cards).blackjack_count
+                winners.append(player.player)
+        self.distribute_bank(winners if winners else list(map(lambda pl: pl.player, self.active_players)))
         self._finished = True
+        return winners
 
     def distribute_bank(self, distributors: list[Player]):
         min_part_bank = self._bank // len(distributors)
@@ -296,6 +304,11 @@ class Round:
     def finished(self):
         return self._finished
 
+    def as_player_round(self, player: Player) -> PlayerRound:
+        for player_round in self.active_players:
+            if player_round.player == player:
+                return player_round
+
 
 class Game:
     def __init__(self, dealer: Dealer):
@@ -311,6 +324,8 @@ class Game:
         self._players.remove(player)
 
     def new_round(self) -> Round:
+        if self.cur_round is not None and not self._cur_round.finished:
+            raise RoundStartException()
         self._cur_round = Round()
         for player in self.players:
             if player.balance >= self._cur_round.min_bet:
